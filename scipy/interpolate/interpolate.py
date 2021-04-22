@@ -544,13 +544,13 @@ class interp1d(_Interpolator1D):
                         raise ValueError("`x` array is all-nan")
                     xx_nan_indx = np.isnan(xx,where=True)
                     # Replace nan with finite, but recognizable number.. sort of crude
-                    xx[xx_nan_indx] =  np.finfo(float).max - 1e3
+                    xx[xx_nan_indx] =  np.finfo(float).max * 1e-2
                     self._outx_nands = xx_nan_indx
                     rewrite_nan = True
                 if np.isnan(self._y).any():
                     yy_nan_indx = np.isnan(yy,where=True)
                     # Replace nan with finite temp number
-                    yy[yy_nan_indx] = np.finfo(float).max - 1e3
+                    yy[yy_nan_indx] = np.finfo(float).max * 1e-2
                     self._outy_nands = yy_nan_indx
                     rewrite_nan = True
 
@@ -675,7 +675,7 @@ class interp1d(_Interpolator1D):
 
     def _call_nan_spline(self, x_new):
         out = self._spline(x_new)
-        out[out == np.inf] = np.nan
+        out[out > np.finfo(float).max * 1e-5] = np.nan
         return out
 
     def _evaluate(self, x_new):
