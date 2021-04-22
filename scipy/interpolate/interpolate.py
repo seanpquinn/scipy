@@ -477,9 +477,6 @@ class interp1d(_Interpolator1D):
         self._kind = kind
         self.fill_value = fill_value  # calls the setter, can modify bounds_err
 
-        # Store nan indices
-        self._outx_nands = array([])
-        self._outy_nands = array([])
         # Adjust to interpolation kind; store reference to *unbound*
         # interpolation methods, in order to avoid circular references to self
         # stored in the bound instance methods, and therefore delayed garbage
@@ -546,14 +543,14 @@ class interp1d(_Interpolator1D):
                     if sx.size == 0:
                         raise ValueError("`x` array is all-nan")
                     xx_nan_indx = np.isnan(xx,where=True)
-                    # Replace nan with finite temp number
-                    xx[xx_nan_indx] = 1.
+                    # Replace nan with finite, but recognizable number.. sort of crude
+                    xx[xx_nan_indx] =  np.finfo(float).max - 1e3
                     self._outx_nands = xx_nan_indx
                     rewrite_nan = True
                 if np.isnan(self._y).any():
                     yy_nan_indx = np.isnan(yy,where=True)
                     # Replace nan with finite temp number
-                    yy[yy_nan_indx] = 1.
+                    yy[yy_nan_indx] = np.finfo(float).max - 1e3
                     self._outy_nands = yy_nan_indx
                     rewrite_nan = True
 
@@ -678,14 +675,7 @@ class interp1d(_Interpolator1D):
 
     def _call_nan_spline(self, x_new):
         out = self._spline(x_new)
-        # Check dims
-        if out.ndim > 1:
-            out[self._outy_nands] = np.nan
-            out[self._outx_nands,:] = np.nan
-        else:
-            # Not sure if this will work, but I would think x and y same shape in this case
-            # Overlapping logical arrays will ensure any x nans and y nans masked in the output
-            out[self._outx_nands + self._outy_nands] = np.nan
+        out[out == np.inf] = np.nan
         return out
 
     def _evaluate(self, x_new):
