@@ -477,6 +477,9 @@ class interp1d(_Interpolator1D):
         self._kind = kind
         self.fill_value = fill_value  # calls the setter, can modify bounds_err
 
+        # Store nan indices
+        self._outx_nands = array([])
+        self._outy_nands = array([])
         # Adjust to interpolation kind; store reference to *unbound*
         # interpolation methods, in order to avoid circular references to self
         # stored in the bound instance methods, and therefore delayed garbage
@@ -537,17 +540,21 @@ class interp1d(_Interpolator1D):
                 # to get the correct shape of the output, which we then fill
                 # with nans.
                 # For slinear or zero order spline, we just pass nans through.
-                mask = np.isnan(self.x)
+                mask = np.isnan(self.x)                
                 if mask.any():
                     sx = self.x[~mask]
                     if sx.size == 0:
                         raise ValueError("`x` array is all-nan")
-                    xx = np.linspace(np.nanmin(self.x),
-                                     np.nanmax(self.x),
-                                     len(self.x))
+                    xx_nan_indx = np.isnan(xx,where=True)
+                    # Replace nan with finite temp number
+                    xx[xx_nan_indx] = 1.
+                    self._outx_nands = xx_nan_indx
                     rewrite_nan = True
                 if np.isnan(self._y).any():
-                    yy = np.ones_like(self._y)
+                    yy_nan_indx = np.isnan(yy,where=True)
+                    # Replace nan with finite temp number
+                    yy[yy_nan_indx] = 1.
+                    self._outy_nands = yy_nan_indx
                     rewrite_nan = True
 
             self._spline = make_interp_spline(xx, yy, k=order,
@@ -671,7 +678,6 @@ class interp1d(_Interpolator1D):
 
     def _call_nan_spline(self, x_new):
         out = self._spline(x_new)
-        out[...] = np.nan
         return out
 
     def _evaluate(self, x_new):
