@@ -545,13 +545,11 @@ class interp1d(_Interpolator1D):
                     xx_nan_indx = np.isnan(xx,where=True)
                     # Replace nan with finite, but recognizable number.. sort of crude
                     xx[xx_nan_indx] =  np.finfo(float).max * 1e-2
-                    self._outx_nands = xx_nan_indx
                     rewrite_nan = True
                 if np.isnan(self._y).any():
                     yy_nan_indx = np.isnan(yy,where=True)
                     # Replace nan with finite temp number
                     yy[yy_nan_indx] = np.finfo(float).max * 1e-2
-                    self._outy_nands = yy_nan_indx
                     rewrite_nan = True
 
             self._spline = make_interp_spline(xx, yy, k=order,
