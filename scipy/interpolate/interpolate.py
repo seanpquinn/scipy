@@ -678,6 +678,14 @@ class interp1d(_Interpolator1D):
 
     def _call_nan_spline(self, x_new):
         out = self._spline(x_new)
+        # Check dims
+        if out.ndim > 1:
+            out[self._outy_nands] = np.nan
+            out[self._outx_nands,:] = np.nan
+        else:
+            # Not sure if this will work, but I would think x and y same shape in this case
+            # Overlapping logical arrays will ensure any x nans and y nans masked in the output
+            out[self._outx_nands + self._outy_nands] = np.nan
         return out
 
     def _evaluate(self, x_new):
